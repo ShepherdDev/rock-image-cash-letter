@@ -13,6 +13,7 @@ namespace com.shepherdchurch.ImageCashLetter
 {
     /// <summary>
     /// Base class for Image Cash Letter file format type components.
+    /// TODO: These "User Value x" attributes should probably go away.
     /// </summary>
     [TextField( "User Value 1", "User customizable value", false, "", "User Values", order: 0 )]
     [TextField( "User Value 2", "User customizable value", false, "", "User Values", order: 1 )]
@@ -52,7 +53,10 @@ namespace com.shepherdchurch.ImageCashLetter
         public FileFormatTypeComponent()
             : base( false )
         {
-            // Construct a new File Format Type component and disable the creation of the attributes.
+            //
+            // The false in the base( false) call above is to prevent the creation of the attributes
+            // until they are saved.
+            //
         }
 
         #endregion
