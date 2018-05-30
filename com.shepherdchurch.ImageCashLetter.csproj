@@ -54,6 +54,7 @@
     <Compile Include="FileFormatTypeComponent.cs" />
     <Compile Include="FileFormatTypeContainer.cs" />
     <Compile Include="FileFormatTypes\X937FileFormatType.cs" />
+    <Compile Include="Micr.cs" />
     <Compile Include="Model\ImageCashLetterFileFormat.cs" />
     <Compile Include="Model\ImageCashLetterFileFormatService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -448,7 +448,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             //
             // Parse the MICR data from the transaction.
             //
-            var micr = new X937.Micr( Rock.Security.Encryption.DecryptString( transaction.CheckMicrEncrypted ) );
+            var micr = new Micr( Rock.Security.Encryption.DecryptString( transaction.CheckMicrEncrypted ) );
             var transactionRoutingNumber = micr.GetField( 5 );
 
             //
@@ -456,9 +456,9 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             //
             var detail = new X937.Records.CheckDetail
             {
-                PayorBankRoutingNumber = transactionRoutingNumber.Substring( 1, 8 ),
-                PayorBankRoutingNumberCheckDigit = transactionRoutingNumber.Substring( 9, 1 ),
-                OnUs = micr.GetField( 3 ).Replace( 'c', '/' ) + micr.GetField( 2 ),
+                PayorBankRoutingNumber = transactionRoutingNumber.Substring( 0, 8 ),
+                PayorBankRoutingNumberCheckDigit = transactionRoutingNumber.Substring( 8, 1 ),
+                OnUs = micr.GetField( 3 ) + "/" + micr.GetField( 2 ),
                 ExternalProcessingCode = micr.GetField( 6 ),
                 AuxiliaryOnUs = micr.GetField( 7 ),
                 ItemAmount = transaction.TotalAmount,
