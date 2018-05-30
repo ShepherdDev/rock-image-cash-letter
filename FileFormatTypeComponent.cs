@@ -13,13 +13,7 @@ namespace com.shepherdchurch.ImageCashLetter
 {
     /// <summary>
     /// Base class for Image Cash Letter file format type components.
-    /// TODO: These "User Value x" attributes should probably go away.
     /// </summary>
-    [TextField( "User Value 1", "User customizable value", false, "", "User Values", order: 0 )]
-    [TextField( "User Value 2", "User customizable value", false, "", "User Values", order: 1 )]
-    [TextField( "User Value 3", "User customizable value", false, "", "User Values", order: 2 )]
-    [TextField( "User Value 4", "User customizable value", false, "", "User Values", order: 3 )]
-    [TextField( "User Value 5", "User customizable value", false, "", "User Values", order: 4 )]
     public abstract class FileFormatTypeComponent : Component
     {
         #region Properties
