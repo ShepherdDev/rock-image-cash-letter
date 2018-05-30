@@ -25,6 +25,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
     [TextField( "Origin Name", "The name of the church.", false, "", order: 4 )]
     [TextField( "Contact Name", "The name of the person the bank will contact if there are issues.", false, "", order: 5 )]
     [TextField( "Contact Phone", "The phone number the bank will call if there are issues.", false, "", order: 6 )]
+    [BooleanField( "Test Mode", "If true then the generated files will be marked as test-mode.", true, order: 7 )]
     public abstract class X937DSTU : FileFormatTypeComponent
     {
         /// <summary>
@@ -112,7 +113,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             var originRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "AccountNumber" ) );
             var header = new X937.Records.FileHeader
             {
-                FileTypeIndicator = "T", // TODO: Change to an attribute value.
+                FileTypeIndicator = GetAttributeValue( fileFormat, "TestMode" ).AsBoolean( true ) ? "T" : "P",
                 ImmediateDestinationRoutingNumber = destinationRoutingNumber,
                 ImmediateOriginRoutingNumber = originRoutingNumber,
                 FileCreationDateTime = DateTime.Now,
