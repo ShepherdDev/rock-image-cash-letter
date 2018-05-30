@@ -53,7 +53,8 @@
   <ItemGroup>
     <Compile Include="FileFormatTypeComponent.cs" />
     <Compile Include="FileFormatTypeContainer.cs" />
-    <Compile Include="FileFormatTypes\X937FileFormatType.cs" />
+    <Compile Include="FileFormatTypes\BankOfTheWest.cs" />
+    <Compile Include="FileFormatTypes\X937DSTU.cs" />
     <Compile Include="Micr.cs" />
     <Compile Include="Model\ImageCashLetterFileFormat.cs" />
     <Compile Include="Model\ImageCashLetterFileFormatService.cs" />

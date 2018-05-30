@@ -18,10 +18,6 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
     /// Defines the basic functionality of any component that will be exporting using the X9.37
     /// DSTU standard.
     /// </summary>
-    [Description( "Processes a file as the preliminary X9.37-2003 DSTU standard." )]
-    [Export( typeof( FileFormatTypeComponent ) )]
-    [ExportMetadata( "ComponentName", "X937 DSTU" )]
-
     [EncryptedTextField( "Routing Number", "Your bank account routing number.", false, "", order: 0 )]
     [EncryptedTextField( "Account Number", "Your bank account number.", false, "", order: 1 )]
     [EncryptedTextField( "Institution Routing Number", "This is defined by your bank, it is usually either the bank routing number or a customer number.", false, "", order: 2 )]
@@ -29,10 +25,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
     [TextField( "Origin Name", "The name of the church.", false, "", order: 4 )]
     [TextField( "Contact Name", "The name of the person the bank will contact if there are issues.", false, "", order: 5 )]
     [TextField( "Contact Phone", "The phone number the bank will call if there are issues.", false, "", order: 6 )]
-    [BooleanField( "Generate Record 61", "Record 61 is not part of the X9.37 spec, but some banks have already adopted it. Set to Yes if your bank requires this record.", false, "", order: 7 )]
-    [EncryptedTextField( "Record 61 Routing Number", "The routing number to be included with the Record 61.", false, "", order: 8 )]
-    [CodeEditorField( "Post Process Template", "Lava template that can be used to post-process the X937 records before they are exported. <span class='tip tip-lava'></span>", CodeEditorMode.Lava, CodeEditorTheme.Rock, 200, false, "", order: 9 )]
-    public class X937DSTU : FileFormatTypeComponent
+    public abstract class X937DSTU : FileFormatTypeComponent
     {
         /// <summary>
         /// Gets the maximum items per bundle. Most banks limit the number of checks that
@@ -243,12 +236,9 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
                 bundleRecords.Add( GetBundleHeader( fileFormat, bundleIndex ) );
 
                 //
-                // If we need to generate a deposit slip, do so.
+                // Allow subclasses to provide credit detail records (type 61) if they want.
                 //
-                if ( GetAttributeValue( fileFormat, "GenerateRecord61" ).AsBoolean() )
-                {
-                    bundleRecords.AddRange( GetCreditDetailRecords( fileFormat, bundleIndex, bundleTransactions ) );
-                }
+                bundleRecords.AddRange( GetCreditDetailRecords( fileFormat, bundleIndex, bundleTransactions ) );
 
                 //
                 // Add records for each transaction in the bundle.
@@ -304,90 +294,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <returns>A collection of records.</returns>
         protected virtual List<X937.Record> GetCreditDetailRecords( ImageCashLetterFileFormat fileFormat, int bundleIndex, List<FinancialTransaction> transactions )
         {
-            var record61RoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "Record61RoutingNumber" ) );
-            var accountNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "AccountNumber" ) );
-            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "RoutingNumber" ) );
-
-            var records = new List<X937.Record>();
-
-            var credit = new X937.Records.CreditDetail
-            {
-                PayorRoutingNumber = record61RoutingNumber,
-                CreditAccountNumber = accountNumber,
-                Amount = transactions.Sum( t => t.TotalAmount ),
-                InstitutionItemSequenceNumber = string.Format( "{0}{1}", RockDateTime.Now.ToString( "yyMMddHHmmss" ), bundleIndex ),
-                DebitCreditIndicator = "2"
-            };
-            records.Add( credit );
-
-            for ( int i = 0; i < 2; i++ )
-            {
-                using ( var ms = new MemoryStream() )
-                {
-                    // TODO: This should be converted to use Lava.
-                    // TOdo: This should also be it's own virtual method.
-                    var bitmap = new System.Drawing.Bitmap( 1200, 550 );
-                    var g = System.Drawing.Graphics.FromImage( bitmap );
-                    g.FillRectangle( System.Drawing.Brushes.White, new System.Drawing.Rectangle( 0, 0, 1200, 550 ) );
-                    if ( i == 0 )
-                    {
-                        g.DrawString( string.Format( "Customer: {0}", GetAttributeValue( fileFormat, "OriginName" ) ),
-                            new System.Drawing.Font( "Tahoma", 30 ),
-                            System.Drawing.Brushes.Black,
-                            new System.Drawing.PointF( 200, 200 ) );
-
-                        g.DrawString( string.Format( "Amount: {0}", credit.Amount.ToString( "C" ) ),
-                            new System.Drawing.Font( "Tahoma", 30 ),
-                            System.Drawing.Brushes.Black,
-                            new System.Drawing.PointF( 200, 250 ) );
-                    }
-                    g.Flush();
-
-                    var codecInfo = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders()
-                        .Where( c => c.MimeType == "image/tiff" )
-                        .First();
-                    var parameters = new System.Drawing.Imaging.EncoderParameters( 1 );
-                    parameters.Param[0] = new System.Drawing.Imaging.EncoderParameter( System.Drawing.Imaging.Encoder.Compression, ( long ) System.Drawing.Imaging.EncoderValue.CompressionCCITT4 );
-
-                    bitmap.Save( ms, codecInfo, parameters );
-                    ms.Position = 0;
-
-                    //
-                    // Get the Image View Detail record (type 50).
-                    // TODO: The following two sections should probably make use of a common
-                    // method shared with the GetImageRecords method.
-                    //
-                    var detail = new X937.Records.ImageViewDetail
-                    {
-                        ImageIndicator = 1,
-                        ImageCreatorRoutingNumber = routingNumber,
-                        ImageCreatorDate = DateTime.Now,
-                        ImageViewFormatIndicator = 0,
-                        CompressionAlgorithmIdentifier = 0,
-                        SideIndicator = i,
-                        ViewDescriptor = 0,
-                        DigitalSignatureIndicator = 0
-                    };
-
-                    //
-                    // Get the Image View Data record (type 52).
-                    //
-                    var data = new X937.Records.ImageViewData
-                    {
-                        InstitutionRoutingNumber = routingNumber,
-                        BundleBusinessDate = DateTime.Now,
-                        ClientInstitutionItemSequenceNumber = accountNumber,
-                        ClippingOrigin = 0,
-                        ImageData = ms.ReadBytesToEnd()
-                    };
-
-                    records.Add( detail );
-                    records.Add( data );
-                }
-            }
-
-
-            return records;
+            return new List<X937.Record>();
         }
 
         /// <summary>
