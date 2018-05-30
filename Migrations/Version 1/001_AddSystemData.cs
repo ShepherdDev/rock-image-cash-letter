@@ -4,6 +4,7 @@ using Rock.Plugin;
 
 namespace com.shepherdchurch.ImageCashLetter.Migrations.Version_1
 {
+    [MigrationNumber( 1, "1.6.4" )]
     public class AddSystemData : Migration
     {
         public override void Up()
