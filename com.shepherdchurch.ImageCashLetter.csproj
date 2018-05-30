@@ -56,9 +56,11 @@
     <Compile Include="FileFormatTypes\BankOfTheWest.cs" />
     <Compile Include="FileFormatTypes\X937DSTU.cs" />
     <Compile Include="Micr.cs" />
+    <Compile Include="Migrations\Version 1\001_AddSystemData.cs" />
     <Compile Include="Model\ImageCashLetterFileFormat.cs" />
     <Compile Include="Model\ImageCashLetterFileFormatService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SystemGuid\EntityType.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\X937\X937.csproj">
