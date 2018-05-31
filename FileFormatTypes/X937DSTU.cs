@@ -113,6 +113,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             var originRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "AccountNumber" ) );
             var header = new X937.Records.FileHeader
             {
+                StandardLevel = 3,
                 FileTypeIndicator = GetAttributeValue( fileFormat, "TestMode" ).AsBoolean( true ) ? "T" : "P",
                 ImmediateDestinationRoutingNumber = destinationRoutingNumber,
                 ImmediateOriginRoutingNumber = originRoutingNumber,
