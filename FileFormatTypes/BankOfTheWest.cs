@@ -44,7 +44,7 @@ Amount: {{ Amount }}", order: 20 )]
                 PayorRoutingNumber = "500100015",
                 CreditAccountNumber = accountNumber,
                 Amount = transactions.Sum( t => t.TotalAmount ),
-                InstitutionItemSequenceNumber = string.Format( "{0}{1}", RockDateTime.Now.ToString( "yyMMddHHmmss" ), bundleIndex ),
+                InstitutionItemSequenceNumber = string.Format( "{0}{1}", RockDateTime.Now.ToString( "yyMMddHHmmss" ), bundleIndex.ToString( "D3" ) ),
                 DebitCreditIndicator = "2"
             };
             records.Add( creditDetail );
