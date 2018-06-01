@@ -7,6 +7,19 @@ namespace com.shepherdchurch.ImageCashLetter
     /// </summary>
     public class Micr
     {
+        /// <summary>
+        /// Enum for readability to fetch out the data we are after
+        /// </summary>
+        enum FIELD
+        {
+            CHECK_AMOUNT,
+            CHECK_NUMBER,
+            ACCOUNT_NUMBER,
+            ROUTING_NUMBER,
+            EXTERNAL_PROCESSING_CODE,
+            AUX_ON_US
+        }
+
         #region Fields
 
         /// <summary>
@@ -53,7 +66,7 @@ namespace com.shepherdchurch.ImageCashLetter
                 }
                 else if ( content.Length < length )
                 {
-                    content = content.PadRight( length - content.Length );
+                    content = content.PadRight( length );
                 }
 
                 _content = content;
@@ -92,7 +105,8 @@ namespace com.shepherdchurch.ImageCashLetter
         /// <param name="field">The field number to retrieve. See inline comments for what each field is.</param>
         /// <returns>A whitespace trimmed string that represents the contents of the field.</returns>
         /// <exception cref="System.ArgumentOutOfRangeException">field - Field must be a valid MICR field number</exception>
-        public string GetField( int field )
+        [Obsolete("Use the GetField(Field Enum) instead.")]
+        private string GetField( int field )
         {
             switch ( field )
             {
@@ -140,6 +154,100 @@ namespace com.shepherdchurch.ImageCashLetter
                 default:
                     throw new ArgumentOutOfRangeException( "field", "Field must be a valid MICR field number" );
             }
+        }
+
+        /// <summary>
+        /// Get Field 
+        /// </summary>
+        /// <param name="FieldType">FIELD</param>
+        /// <returns>sting</returns>
+        private string GetField(FIELD FieldType)
+        {
+            var f = string.Empty;
+
+            switch (FieldType)
+            {
+                // Account number
+                case FIELD.ACCOUNT_NUMBER:
+
+                    f = GetCharacterFields(13, 32);
+
+                    return f.Substring(0, f.IndexOf('c')).Trim();
+
+                // AUX OnUs
+                case FIELD.AUX_ON_US:
+
+                    return GetCharacterFields(45, _content.Length).Trim();
+
+                // Check Amount
+                case FIELD.CHECK_AMOUNT:
+
+                    return GetCharacterFields( 1, 12 ).Trim();
+
+                // Check Number
+                case FIELD.CHECK_NUMBER:
+
+                    f = GetCharacterFields(13, 32);
+
+                    return f.Substring(f.IndexOf('c') + 1).Trim();
+
+                // External Processing code
+                case FIELD.EXTERNAL_PROCESSING_CODE:
+
+                    return GetCharacterFields(44, 44).Trim();
+
+                // Routing Number
+                case FIELD.ROUTING_NUMBER:
+
+                    return GetCharacterFields(34, 42).Trim();
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// GetRoutingNumber
+        /// </summary>
+        /// <returns>string</returns>
+        public string GetRoutingNumber()
+        {
+            return GetField(FIELD.ROUTING_NUMBER);
+        }
+
+        /// <summary>
+        /// GetCheckNumber
+        /// </summary>
+        /// <returns>string</returns>
+        public string GetCheckNumber()
+        {
+            return GetField(FIELD.CHECK_NUMBER);
+        }
+
+        /// <summary>
+        /// GetAccountNumber
+        /// </summary>
+        /// <returns>string</returns>
+        public string GetAccountNumber()
+        {
+            return GetField(FIELD.ACCOUNT_NUMBER);
+        }
+
+        /// <summary>
+        /// GetExternalProcessingCode
+        /// </summary>
+        /// <returns>string</returns>
+        public string GetExternalProcessingCode()
+        {
+            return GetField(FIELD.EXTERNAL_PROCESSING_CODE);
+        }
+
+        /// <summary>
+        /// GetAuxOnUs
+        /// </summary>
+        /// <returns>string</returns>
+        public string GetAuxOnUs()
+        {
+            return GetField(FIELD.AUX_ON_US);
         }
     }
 }

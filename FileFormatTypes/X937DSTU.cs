@@ -336,6 +336,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             var records = new List<X937.Record>();
 
             records.AddRange( GetItemDetailRecords( fileFormat, transaction ) );
+            
             records.AddRange( GetImageRecords( fileFormat, transaction, transaction.Images.Take( 1 ).First(), true ) );
             records.AddRange( GetImageRecords( fileFormat, transaction, transaction.Images.Skip( 1 ).Take( 1 ).First(), true ) );
 
@@ -350,14 +351,17 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <returns>A collection of records.</returns>
         protected virtual List<X937.Record> GetItemDetailRecords( ImageCashLetterFileFormat fileFormat, FinancialTransaction transaction )
         {
+            
             var accountNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "AccountNumber" ) );
             var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "RoutingNumber" ) );
 
             //
             // Parse the MICR data from the transaction.
             //
-            var micr = new Micr( Rock.Security.Encryption.DecryptString( transaction.CheckMicrEncrypted ) );
-            var transactionRoutingNumber = micr.GetField( 5 );
+            var micr = GetMicrInst(transaction.CheckMicrEncrypted);
+
+            //var transactionRoutingNumber = micr.GetField( 5 );
+            var transactionRoutingNumber = micr.GetRoutingNumber();
 
             //
             // Get the Check Detail record (type 25).
@@ -366,9 +370,12 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             {
                 PayorBankRoutingNumber = transactionRoutingNumber.Substring( 0, 8 ),
                 PayorBankRoutingNumberCheckDigit = transactionRoutingNumber.Substring( 8, 1 ),
-                OnUs = micr.GetField( 3 ) + "/" + micr.GetField( 2 ),
-                ExternalProcessingCode = micr.GetField( 6 ),
-                AuxiliaryOnUs = micr.GetField( 7 ),
+                //OnUs = micr.GetField( 3 ) + "/" + micr.GetField( 2 ),
+                OnUs = string.Format("{0}/{1}", micr.GetAccountNumber(), micr.GetCheckNumber()),
+                //ExternalProcessingCode = micr.GetField( 6 ),
+                ExternalProcessingCode = micr.GetExternalProcessingCode(),
+                //AuxiliaryOnUs = micr.GetField( 7 ),
+                AuxiliaryOnUs = micr.GetAuxOnUs(),
                 ItemAmount = transaction.TotalAmount,
                 ClientInstitutionItemSequenceNumber = accountNumber,
                 DocumentationTypeIndicator = "G",
@@ -433,6 +440,22 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             };
 
             return new List<X937.Record> { detail, data };
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private Micr GetMicrInst(string encryptedMicrContent)
+        {
+            string decryptedMicrContent = Rock.Security.Encryption.DecryptString(encryptedMicrContent);
+
+            if (decryptedMicrContent == null)
+                throw new ArgumentException("MICR data is empty.");
+
+            var micr = new Micr(decryptedMicrContent);
+            
+            return micr;
         }
 
         #endregion
