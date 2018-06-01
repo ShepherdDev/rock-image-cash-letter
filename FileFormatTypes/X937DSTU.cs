@@ -111,6 +111,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         {
             var destinationRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "RoutingNumber" ) );
             var originRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "AccountNumber" ) );
+
             var header = new X937.Records.FileHeader
             {
                 StandardLevel = 3,
@@ -178,7 +179,6 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
                 CreationDateTime = DateTime.Now,
                 RecordTypeIndicator = "I",
                 DocumentationTypeIndicator = "G",
-                ID = "TODO", // TODO: Fix this, waiting for feedback from bank.
                 OriginatorContactName = contactName,
                 OriginatorContactPhoneNumber = contactPhone
             };
