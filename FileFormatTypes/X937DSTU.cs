@@ -137,15 +137,16 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <returns>A FileControl record.</returns>
         protected virtual X937.Records.FileControl GetFileControlRecord( ImageCashLetterFileFormat fileFormat, List<X937.Record> records )
         {
-            var detailRecords = records.Where( r => r.GetType() == typeof( X937.Records.CheckDetail ) )
-                .Cast<X937.Records.CheckDetail>();
+            var cashHeaderRecords = records.Where( r => r.RecordType == 10 );
+            var detailRecords = records.Where( r => r.RecordType == 25 ).Cast<dynamic>();
+            var itemRecords = records.Where( r => r.RecordType == 25 || r.RecordType == 61 );
 
             var control = new X937.Records.FileControl
             {
-                CashLetterCount = records.Count( r => r.GetType() == typeof( X937.Records.CashLetterHeader ) ),
-                TotalRecordCount = records.Count + 1,
-                TotalItemCount = detailRecords.Count(),
-                TotalAmount = detailRecords.Sum( c => c.ItemAmount ),
+                CashLetterCount = cashHeaderRecords.Count(),
+                TotalRecordCount = records.Count + 1, /* Plus one to include self */
+                TotalItemCount = itemRecords.Count(),
+                TotalAmount = detailRecords.Sum( c => ( decimal ) c.ItemAmount ),
                 ImmediateOriginContactName = GetAttributeValue( fileFormat, "ContactName" ),
                 ImmediateOriginContactPhoneNumber = GetAttributeValue( fileFormat, "ContactPhone" )
             };
@@ -193,18 +194,18 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <returns>A CashLetterControl record.</returns>
         protected virtual X937.Records.CashLetterControl GetCashLetterControlRecord( ImageCashLetterFileFormat fileFormat, List<X937.Record> records )
         {
-            var bundleHeaderRecords = records.Where( r => r.GetType() == typeof( X937.Records.BundleHeader ) );
-            var checkDetailRecords = records.Where( r => r.GetType() == typeof( X937.Records.CheckDetail ) )
-                .Cast<X937.Records.CheckDetail>();
-            var imageRecords = records.Where( r => r.GetType() == typeof( X937.Records.ImageViewDetail ) || r.GetType() == typeof( X937.Records.ImageViewData ) );
+            var bundleHeaderRecords = records.Where( r => r.RecordType == 20 );
+            var checkDetailRecords = records.Where( r => r.RecordType == 25 ).Cast<dynamic>();
+            var itemRecords = records.Where( r => r.RecordType == 25 || r.RecordType == 61 );
+            var imageDetailRecords = records.Where( r => r.RecordType == 52 );
             var organizationName = Rock.Web.Cache.GlobalAttributesCache.Value( "OrganizationName" );
 
             var control = new X937.Records.CashLetterControl
             {
                 BundleCount = bundleHeaderRecords.Count(),
-                ItemCount = checkDetailRecords.Count(),
-                TotalAmount = checkDetailRecords.Sum( c => c.ItemAmount ),
-                ImageCount = imageRecords.Count(),
+                ItemCount = itemRecords.Count(),
+                TotalAmount = checkDetailRecords.Sum( c => ( decimal ) c.ItemAmount ),
+                ImageCount = imageDetailRecords.Count(),
                 ECEInstitutionName = organizationName
             };
 
@@ -307,16 +308,16 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <returns>A BundleControl record.</returns>
         protected virtual X937.Records.BundleControl GetBundleControl( ImageCashLetterFileFormat fileFormat, List<X937.Record> records )
         {
-            var checkDetailRecords = records.Where( r => r.GetType() == typeof( X937.Records.CheckDetail ) )
-                .Cast<X937.Records.CheckDetail>();
-            var imageViewRecords = records.Where( r => r.GetType() == typeof( X937.Records.ImageViewDetail ) || r.GetType() == typeof( X937.Records.ImageViewData ) );
+            var itemRecords = records.Where( r => r.RecordType == 25 || r.RecordType == 61 );
+            var checkDetailRecords = records.Where( r => r.RecordType == 25 ).Cast<dynamic>();
+            var imageDetailRecords = records.Where( r => r.RecordType == 52 );
 
             var control = new X937.Records.BundleControl
             {
-                ItemCount = checkDetailRecords.Count(),
-                TotalAmount = checkDetailRecords.Sum( r => r.ItemAmount ),
-                MICRValidTotalAmount = checkDetailRecords.Sum( r => r.ItemAmount ),
-                ImageCount = imageViewRecords.Count()
+                ItemCount = itemRecords.Count(),
+                TotalAmount = checkDetailRecords.Sum( r => ( decimal ) r.ItemAmount ),
+                MICRValidTotalAmount = checkDetailRecords.Sum( r => ( decimal ) r.ItemAmount ),
+                ImageCount = imageDetailRecords.Count()
             };
 
             return control;
