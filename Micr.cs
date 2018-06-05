@@ -126,11 +126,11 @@ namespace com.shepherdchurch.ImageCashLetter
         /// </summary>
         /// <param name="FieldType">The MICR field to be retrieved.</param>
         /// <returns>String containing the component value from the MICR line.</returns>
-        protected string GetField(FIELD FieldType)
+        protected string GetField( FIELD FieldType )
         {
             var f = string.Empty;
 
-            switch (FieldType)
+            switch ( FieldType )
             {
                 // Account number
                 case FIELD.ACCOUNT_NUMBER:
@@ -195,7 +195,7 @@ namespace com.shepherdchurch.ImageCashLetter
         /// <returns>A string containing the routing number characters.</returns>
         public string GetRoutingNumber()
         {
-            return GetField(FIELD.ROUTING_NUMBER);
+            return GetField( FIELD.ROUTING_NUMBER );
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace com.shepherdchurch.ImageCashLetter
         /// <returns>A string containing, what is normally, the check number characters.</returns>
         public string GetCheckNumber()
         {
-            return GetField(FIELD.CHECK_NUMBER);
+            return GetField( FIELD.CHECK_NUMBER );
         }
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace com.shepherdchurch.ImageCashLetter
         /// <returns>A string containing the account number this check will draw on.</returns>
         public string GetAccountNumber()
         {
-            return GetField(FIELD.ACCOUNT_NUMBER);
+            return GetField( FIELD.ACCOUNT_NUMBER );
         }
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace com.shepherdchurch.ImageCashLetter
         /// <returns></returns>
         public string GetExternalProcessingCode()
         {
-            return GetField(FIELD.EXTERNAL_PROCESSING_CODE);
+            return GetField( FIELD.EXTERNAL_PROCESSING_CODE );
         }
 
         /// <summary>
@@ -231,7 +231,7 @@ namespace com.shepherdchurch.ImageCashLetter
         /// <returns>string</returns>
         public string GetAuxOnUs()
         {
-            return GetField(FIELD.AUX_ON_US);
+            return GetField( FIELD.AUX_ON_US );
         }
 
         #endregion
