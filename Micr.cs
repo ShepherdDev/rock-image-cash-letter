@@ -143,13 +143,13 @@ namespace com.shepherdchurch.ImageCashLetter
                 // AUX OnUs
                 case FIELD.AUX_ON_US:
                     {
-                        return GetCharacterFields( 45, _content.Length ).Trim();
+                        return GetCharacterFields( 45, _content.Length ).Replace( "c", "" ).Trim();
                     }
 
                 // Check Amount
                 case FIELD.CHECK_AMOUNT:
                     {
-                        return GetCharacterFields( 1, 12 ).Trim();
+                        return GetCharacterFields( 2, 11 ).Trim();
                     }
 
                 // Check Number
@@ -179,6 +179,15 @@ namespace com.shepherdchurch.ImageCashLetter
         #endregion
 
         #region Methods
+
+        /// <summary>
+        /// Gets the amount of the check as specified on the MICR line.
+        /// </summary>
+        /// <returns>A string containing the amount characters.</returns>
+        public string GetCheckAmount()
+        {
+            return GetField( FIELD.CHECK_AMOUNT );
+        }
 
         /// <summary>
         /// Gets the routing number from the MICR line.
