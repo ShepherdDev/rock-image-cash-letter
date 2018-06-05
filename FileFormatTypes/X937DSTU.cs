@@ -353,16 +353,14 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <returns>A collection of records.</returns>
         protected virtual List<X937.Record> GetItemDetailRecords( ImageCashLetterFileFormat fileFormat, FinancialTransaction transaction )
         {
-            
             var accountNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "AccountNumber" ) );
             var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "RoutingNumber" ) );
 
             //
             // Parse the MICR data from the transaction.
             //
-            var micr = GetMicrInst(transaction.CheckMicrEncrypted);
+            var micr = GetMicrInstance(transaction.CheckMicrEncrypted);
 
-            //var transactionRoutingNumber = micr.GetField( 5 );
             var transactionRoutingNumber = micr.GetRoutingNumber();
 
             //
@@ -372,11 +370,8 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             {
                 PayorBankRoutingNumber = transactionRoutingNumber.Substring( 0, 8 ),
                 PayorBankRoutingNumberCheckDigit = transactionRoutingNumber.Substring( 8, 1 ),
-                //OnUs = micr.GetField( 3 ) + "/" + micr.GetField( 2 ),
                 OnUs = string.Format("{0}/{1}", micr.GetAccountNumber(), micr.GetCheckNumber()),
-                //ExternalProcessingCode = micr.GetField( 6 ),
                 ExternalProcessingCode = micr.GetExternalProcessingCode(),
-                //AuxiliaryOnUs = micr.GetField( 7 ),
                 AuxiliaryOnUs = micr.GetAuxOnUs(),
                 ItemAmount = transaction.TotalAmount,
                 ClientInstitutionItemSequenceNumber = accountNumber,
@@ -448,12 +443,20 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
 
         #region Private Methods
 
-        private Micr GetMicrInst(string encryptedMicrContent)
+        /// <summary>
+        /// Gets a MICR object instance from the encrypted MICR data.
+        /// </summary>
+        /// <param name="encryptedMicrContent">Content of the encrypted MICR.</param>
+        /// <returns>A <see cref="Micr"/> instance that can be used to get decrypted MICR data.</returns>
+        /// <exception cref="ArgumentException">MICR data is empty.</exception>
+        private Micr GetMicrInstance(string encryptedMicrContent)
         {
             string decryptedMicrContent = Rock.Security.Encryption.DecryptString(encryptedMicrContent);
 
-            if (decryptedMicrContent == null)
-                throw new ArgumentException("MICR data is empty.");
+            if ( decryptedMicrContent == null )
+            {
+                throw new ArgumentException( "MICR data is empty." );
+            }
 
             var micr = new Micr(decryptedMicrContent);
             
