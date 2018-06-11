@@ -340,7 +340,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             records.AddRange( GetItemDetailRecords( fileFormat, transaction ) );
             
             records.AddRange( GetImageRecords( fileFormat, transaction, transaction.Images.Take( 1 ).First(), true ) );
-            records.AddRange( GetImageRecords( fileFormat, transaction, transaction.Images.Skip( 1 ).Take( 1 ).First(), true ) );
+            records.AddRange( GetImageRecords( fileFormat, transaction, transaction.Images.Skip( 1 ).Take( 1 ).First(), false ) );
 
             return records;
         }
