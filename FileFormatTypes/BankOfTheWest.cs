@@ -12,6 +12,7 @@ using Rock.Model;
 using com.shepherdchurch.ImageCashLetter.Model;
 using X937.Records;
 using System.Text;
+using X937;
 
 namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
 {
@@ -40,7 +41,26 @@ Amount: {{ Amount }}", order: 20 )]
         /// </summary>
         protected const string SystemSettingLastFileModifier = "com.shepherdchurch.ImageCashLetter.BankOfTheWest.LastFileModifier";
 
+        /// <summary>
+        /// The last item sequence number used for items.
+        /// </summary>
+        protected const string LastItemSequenceNumberKey = "com.shepherdchurch.ImageCashLetter.BankOfTheWest.LastItemSequenceNumber";
+
         #endregion
+
+        /// <summary>
+        /// Gets the next item sequence number.
+        /// </summary>
+        /// <returns>An integer that identifies the unique item sequence number that can be used.</returns>
+        protected int GetNextItemSequenceNumber()
+        {
+            int lastSequence = Rock.Web.SystemSettings.GetValue( LastItemSequenceNumberKey ).AsIntegerOrNull() ?? 0;
+            int nextSequence = lastSequence + 1;
+
+            Rock.Web.SystemSettings.SetValue( LastItemSequenceNumberKey, nextSequence.ToString() );
+
+            return nextSequence;
+        }
 
         /// <summary>
         /// Gets the file header record (type 01).
@@ -127,7 +147,7 @@ Amount: {{ Amount }}", order: 20 )]
                 PayorRoutingNumber = "500100015",
                 CreditAccountNumber = accountNumber + "/",
                 Amount = transactions.Sum( t => t.TotalAmount ),
-                InstitutionItemSequenceNumber = string.Format( "{0}{1}", RockDateTime.Now.ToString( "yyMMddHHmmss" ), bundleIndex.ToString( "D3" ) ),
+                InstitutionItemSequenceNumber = GetNextItemSequenceNumber().ToString( "000000000000000" ),
                 DebitCreditIndicator = "2"
             };
             records.Add( creditDetail );
@@ -158,7 +178,7 @@ Amount: {{ Amount }}", order: 20 )]
                     {
                         InstitutionRoutingNumber = routingNumber,
                         BundleBusinessDate = DateTime.Now,
-                        ClientInstitutionItemSequenceNumber = accountNumber,
+                        ClientInstitutionItemSequenceNumber = creditDetail.InstitutionItemSequenceNumber,
                         ClippingOrigin = 0,
                         ImageData = ms.ReadBytesToEnd()
                     };
@@ -166,6 +186,34 @@ Amount: {{ Amount }}", order: 20 )]
                     records.Add( detail );
                     records.Add( data );
                 }
+            }
+
+            return records;
+        }
+
+        /// <summary>
+        /// Gets the records that identify a single check being deposited.
+        /// </summary>
+        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="transaction">The transaction to be deposited.</param>
+        /// <returns>
+        /// A collection of records.
+        /// </returns>
+        protected override List<Record> GetItemRecords( ImageCashLetterFileFormat fileFormat, FinancialTransaction transaction )
+        {
+            var records = base.GetItemRecords( fileFormat, transaction );
+            var sequenceNumber = GetNextItemSequenceNumber();
+
+            //
+            // Modify the Check Detail Record and Check Image Data records to have
+            // a unique item sequence number.
+            //
+            var checkDetail = records.Where( r => r.RecordType == 25 ).Cast<dynamic>().FirstOrDefault();
+            checkDetail.ClientInstitutionItemSequenceNumber = sequenceNumber.ToString( "000000000000000" );
+
+            foreach ( var imageData in records.Where( r => r.RecordType == 52 ).Cast<dynamic>() )
+            {
+                imageData.ClientInstitutionItemSequenceNumber = sequenceNumber.ToString( "000000000000000" );
             }
 
             return records;
