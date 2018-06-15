@@ -250,7 +250,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
                 {
                     bundleRecords.AddRange( GetItemRecords( fileFormat, transaction ) );
                 }
-                
+
                 //
                 // Add the bundle control record.
                 //
@@ -338,9 +338,9 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             var records = new List<X937.Record>();
 
             records.AddRange( GetItemDetailRecords( fileFormat, transaction ) );
-            
+
             records.AddRange( GetImageRecords( fileFormat, transaction, transaction.Images.Take( 1 ).First(), true ) );
-            records.AddRange( GetImageRecords( fileFormat, transaction, transaction.Images.Skip( 1 ).Take( 1 ).First(), true ) );
+            records.AddRange( GetImageRecords( fileFormat, transaction, transaction.Images.Skip( 1 ).Take( 1 ).First(), false ) );
 
             return records;
         }
@@ -359,7 +359,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             //
             // Parse the MICR data from the transaction.
             //
-            var micr = GetMicrInstance(transaction.CheckMicrEncrypted);
+            var micr = GetMicrInstance( transaction.CheckMicrEncrypted );
 
             var transactionRoutingNumber = micr.GetRoutingNumber();
 
@@ -370,7 +370,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             {
                 PayorBankRoutingNumber = transactionRoutingNumber.Substring( 0, 8 ),
                 PayorBankRoutingNumberCheckDigit = transactionRoutingNumber.Substring( 8, 1 ),
-                OnUs = string.Format("{0}/{1}", micr.GetAccountNumber(), micr.GetCheckNumber()),
+                OnUs = string.Format( "{0}/{1}", micr.GetAccountNumber(), micr.GetCheckNumber() ),
                 ExternalProcessingCode = micr.GetExternalProcessingCode(),
                 AuxiliaryOnUs = micr.GetAuxOnUs(),
                 ItemAmount = transaction.TotalAmount,
@@ -425,7 +425,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             };
 
             //
-            // Get the Image View Data record (type 51).
+            // Get the Image View Data record (type 52).
             //
             var data = new X937.Records.ImageViewData
             {
@@ -449,17 +449,17 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <param name="encryptedMicrContent">Content of the encrypted MICR.</param>
         /// <returns>A <see cref="Micr"/> instance that can be used to get decrypted MICR data.</returns>
         /// <exception cref="ArgumentException">MICR data is empty.</exception>
-        private Micr GetMicrInstance(string encryptedMicrContent)
+        private Micr GetMicrInstance( string encryptedMicrContent )
         {
-            string decryptedMicrContent = Rock.Security.Encryption.DecryptString(encryptedMicrContent);
+            string decryptedMicrContent = Rock.Security.Encryption.DecryptString( encryptedMicrContent );
 
             if ( decryptedMicrContent == null )
             {
                 throw new ArgumentException( "MICR data is empty." );
             }
 
-            var micr = new Micr(decryptedMicrContent);
-            
+            var micr = new Micr( decryptedMicrContent );
+
             return micr;
         }
 
