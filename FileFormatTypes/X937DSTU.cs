@@ -11,6 +11,7 @@ using Rock.Model;
 using Rock.Web.UI.Controls;
 
 using com.shepherdchurch.ImageCashLetter.Model;
+using System.Drawing;
 
 namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
 {
@@ -433,7 +434,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
                 BundleBusinessDate = DateTime.Now,
                 ClientInstitutionItemSequenceNumber = accountNumber,
                 ClippingOrigin = 0,
-                ImageData = image.BinaryFile.ContentStream.ReadBytesToEnd()
+                ImageData = ConvertImageToTiffG4( image.BinaryFile.ContentStream ).ReadBytesToEnd()
             };
 
             return new List<X937.Record> { detail, data };
@@ -441,7 +442,37 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
 
         #endregion
 
-        #region Private Methods
+        #region Protected Methods
+
+        /// <summary>
+        /// Converts the image to tiff g4 specifications.
+        /// </summary>
+        /// <param name="imageStream">The image stream.</param>
+        /// <returns></returns>
+        protected Stream ConvertImageToTiffG4( Stream imageStream )
+        {
+            var bitmap = new Bitmap( imageStream );
+
+            //
+            // Ensure the DPI is correct.
+            //
+            bitmap.SetResolution( 200, 200 );
+
+            //
+            // Compress using TIFF, CCITT Group 4 format.
+            //
+            var codecInfo = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders()
+                .Where( c => c.MimeType == "image/tiff" )
+                .First();
+            var parameters = new System.Drawing.Imaging.EncoderParameters( 1 );
+            parameters.Param[0] = new System.Drawing.Imaging.EncoderParameter( System.Drawing.Imaging.Encoder.Compression, ( long ) System.Drawing.Imaging.EncoderValue.CompressionCCITT4 );
+
+            var ms = new MemoryStream();
+            bitmap.Save( ms, codecInfo, parameters );
+            ms.Position = 0;
+
+            return ms;
+        }
 
         /// <summary>
         /// Gets a MICR object instance from the encrypted MICR data.
@@ -449,7 +480,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <param name="encryptedMicrContent">Content of the encrypted MICR.</param>
         /// <returns>A <see cref="Micr"/> instance that can be used to get decrypted MICR data.</returns>
         /// <exception cref="ArgumentException">MICR data is empty.</exception>
-        private Micr GetMicrInstance( string encryptedMicrContent )
+        protected Micr GetMicrInstance( string encryptedMicrContent )
         {
             string decryptedMicrContent = Rock.Security.Encryption.DecryptString( encryptedMicrContent );
 
