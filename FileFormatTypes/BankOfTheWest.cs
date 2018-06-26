@@ -81,7 +81,7 @@ Amount: {{ Amount }}", order: 20 )]
             // increment the file id modifier.
             //
             var fileIdModifier = "A";
-            var hashText = header.ImmediateDestinationRoutingNumber + header.ImmediateOriginRoutingNumber + header.FileCreationDateTime.ToString( "yyyyMMddHHmm" );
+            var hashText = header.ImmediateDestinationRoutingNumber + header.ImmediateOriginRoutingNumber + header.FileCreationDateTime.ToString( "yyyyMMdd" );
             var hash = HashString( hashText );
 
             //
@@ -100,6 +100,14 @@ Amount: {{ Amount }}", order: 20 )]
                     if ( components[0] == hash )
                     {
                         fileIdModifier = ( ( char ) ( components[1][0] + 1 ) ).ToString();
+
+                        //
+                        // If we have done more than 26 files today, assume we are testing and start back at 'A'.
+                        //
+                        if ( fileIdModifier[0] > 'Z' )
+                        {
+                            fileIdModifier = "A";
+                        }
                     }
                 }
             }
