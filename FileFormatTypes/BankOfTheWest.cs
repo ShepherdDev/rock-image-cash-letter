@@ -34,17 +34,17 @@ Amount: {{ Amount }}", order: 20 )]
         /// The system setting for the next cash header identifier. These should never be
         /// repeated. Ever.
         /// </summary>
-        protected const string SystemSettingNextCashHeaderId = "com.shepherdchurch.ImageCashLetter.BankOfTheWest.NextCashHeaderId";
+        protected const string SystemSettingNextCashHeaderId = "BankOfTheWest.NextCashHeaderId";
 
         /// <summary>
         /// The system setting that contains the last file modifier we used.
         /// </summary>
-        protected const string SystemSettingLastFileModifier = "com.shepherdchurch.ImageCashLetter.BankOfTheWest.LastFileModifier";
+        protected const string SystemSettingLastFileModifier = "BankOfTheWest.LastFileModifier";
 
         /// <summary>
         /// The last item sequence number used for items.
         /// </summary>
-        protected const string LastItemSequenceNumberKey = "com.shepherdchurch.ImageCashLetter.BankOfTheWest.LastItemSequenceNumber";
+        protected const string LastItemSequenceNumberKey = "BankOfTheWest.LastItemSequenceNumber";
 
         #endregion
 
@@ -54,10 +54,10 @@ Amount: {{ Amount }}", order: 20 )]
         /// <returns>An integer that identifies the unique item sequence number that can be used.</returns>
         protected int GetNextItemSequenceNumber()
         {
-            int lastSequence = Rock.Web.SystemSettings.GetValue( LastItemSequenceNumberKey ).AsIntegerOrNull() ?? 0;
+            int lastSequence = GetSystemSetting( LastItemSequenceNumberKey ).AsIntegerOrNull() ?? 0;
             int nextSequence = lastSequence + 1;
 
-            Rock.Web.SystemSettings.SetValue( LastItemSequenceNumberKey, nextSequence.ToString() );
+            SetSystemSetting( LastItemSequenceNumberKey, nextSequence.ToString() );
 
             return nextSequence;
         }
@@ -65,13 +65,13 @@ Amount: {{ Amount }}", order: 20 )]
         /// <summary>
         /// Gets the file header record (type 01).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <returns>
         /// A FileHeader record.
         /// </returns>
-        protected override FileHeader GetFileHeaderRecord( ImageCashLetterFileFormat fileFormat )
+        protected override FileHeader GetFileHeaderRecord( ExportOptions options )
         {
-            var header = base.GetFileHeaderRecord( fileFormat );
+            var header = base.GetFileHeaderRecord( options );
 
             //
             // The combination of the following fields must be unique:
@@ -87,7 +87,7 @@ Amount: {{ Amount }}", order: 20 )]
             //
             // find the last modifier, if there was one.
             //
-            var lastModifier = Rock.Web.SystemSettings.GetValue( SystemSettingLastFileModifier );
+            var lastModifier = GetSystemSetting( SystemSettingLastFileModifier );
             if ( !string.IsNullOrWhiteSpace( lastModifier ) )
             {
                 var components = lastModifier.Split( '|' );
@@ -113,7 +113,7 @@ Amount: {{ Amount }}", order: 20 )]
             }
 
             header.FileIdModifier = fileIdModifier;
-            Rock.Web.SystemSettings.SetValue( SystemSettingLastFileModifier, string.Join( "|", hash, fileIdModifier ) );
+            SetSystemSetting( SystemSettingLastFileModifier, string.Join( "|", hash, fileIdModifier ) );
 
             return header;
         }
@@ -121,17 +121,17 @@ Amount: {{ Amount }}", order: 20 )]
         /// <summary>
         /// Gets the cash letter header record (type 10).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <returns>
         /// A CashLetterHeader record.
         /// </returns>
-        protected override CashLetterHeader GetCashLetterHeaderRecord( ImageCashLetterFileFormat fileFormat )
+        protected override CashLetterHeader GetCashLetterHeaderRecord( ExportOptions options )
         {
-            int cashHeaderId = Rock.Web.SystemSettings.GetValue( SystemSettingNextCashHeaderId ).AsIntegerOrNull() ?? 0;
+            int cashHeaderId = GetSystemSetting( SystemSettingNextCashHeaderId ).AsIntegerOrNull() ?? 0;
 
-            var header = base.GetCashLetterHeaderRecord( fileFormat );
+            var header = base.GetCashLetterHeaderRecord( options );
             header.ID = cashHeaderId.ToString( "D8" );
-            Rock.Web.SystemSettings.SetValue( SystemSettingNextCashHeaderId, ( cashHeaderId + 1 ).ToString() );
+            SetSystemSetting( SystemSettingNextCashHeaderId, ( cashHeaderId + 1 ).ToString() );
 
             return header;
         }
@@ -139,14 +139,16 @@ Amount: {{ Amount }}", order: 20 )]
         /// <summary>
         /// Gets the credit detail deposit record (type 61).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="bundleIndex">Number of existing bundle records in the cash letter.</param>
         /// <param name="transactions">The transactions associated with this deposit.</param>
-        /// <returns>A collection of records.</returns>
-        protected override List<X937.Record> GetCreditDetailRecords( ImageCashLetterFileFormat fileFormat, int bundleIndex, List<FinancialTransaction> transactions )
+        /// <returns>
+        /// A collection of records.
+        /// </returns>
+        protected override List<X937.Record> GetCreditDetailRecords( ExportOptions options, int bundleIndex, List<FinancialTransaction> transactions )
         {
-            var accountNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "AccountNumber" ) );
-            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "RoutingNumber" ) );
+            var accountNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "AccountNumber" ) );
+            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "RoutingNumber" ) );
 
             var records = new List<X937.Record>();
 
@@ -162,7 +164,7 @@ Amount: {{ Amount }}", order: 20 )]
 
             for ( int i = 0; i < 2; i++ )
             {
-                using ( var ms = GetDepositSlipImage(fileFormat, creditDetail, i == 0 ) )
+                using ( var ms = GetDepositSlipImage(options, creditDetail, i == 0 ) )
                 {
                     //
                     // Get the Image View Detail record (type 50).
@@ -171,7 +173,7 @@ Amount: {{ Amount }}", order: 20 )]
                     {
                         ImageIndicator = 1,
                         ImageCreatorRoutingNumber = routingNumber,
-                        ImageCreatorDate = DateTime.Now,
+                        ImageCreatorDate = options.ExportDateTime,
                         ImageViewFormatIndicator = 0,
                         CompressionAlgorithmIdentifier = 0,
                         SideIndicator = i,
@@ -185,7 +187,7 @@ Amount: {{ Amount }}", order: 20 )]
                     var data = new ImageViewData
                     {
                         InstitutionRoutingNumber = routingNumber,
-                        BundleBusinessDate = DateTime.Now,
+                        BundleBusinessDate = options.BusinessDateTime,
                         ClientInstitutionItemSequenceNumber = creditDetail.InstitutionItemSequenceNumber,
                         ClippingOrigin = 0,
                         ImageData = ms.ReadBytesToEnd()
@@ -202,14 +204,14 @@ Amount: {{ Amount }}", order: 20 )]
         /// <summary>
         /// Gets the records that identify a single check being deposited.
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="transaction">The transaction to be deposited.</param>
         /// <returns>
         /// A collection of records.
         /// </returns>
-        protected override List<Record> GetItemRecords( ImageCashLetterFileFormat fileFormat, FinancialTransaction transaction )
+        protected override List<Record> GetItemRecords( ExportOptions options, FinancialTransaction transaction )
         {
-            var records = base.GetItemRecords( fileFormat, transaction );
+            var records = base.GetItemRecords( options, transaction );
             var sequenceNumber = GetNextItemSequenceNumber();
 
             //
@@ -230,19 +232,19 @@ Amount: {{ Amount }}", order: 20 )]
         /// <summary>
         /// Gets the credit detail deposit record (type 61).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="transactions">The transactions associated with this deposit.</param>
         /// <param name="isFrontSide">True if the image to be retrieved is the front image.</param>
         /// <returns>A stream that contains the image data in TIFF 6.0 CCITT Group 4 format.</returns>
-        protected virtual Stream GetDepositSlipImage( ImageCashLetterFileFormat fileFormat, CreditDetail creditDetail, bool isFrontSide )
+        protected virtual Stream GetDepositSlipImage( ExportOptions options, CreditDetail creditDetail, bool isFrontSide )
         {
             var bitmap = new System.Drawing.Bitmap( 1200, 550 );
             var g = System.Drawing.Graphics.FromImage( bitmap );
 
-            var depositSlipTemplate = GetAttributeValue( fileFormat, "DepositSlipTemplate" );
+            var depositSlipTemplate = GetAttributeValue( options.FileFormat, "DepositSlipTemplate" );
             var mergeFields = new Dictionary<string, object>
             {
-                { "FileFormat", fileFormat },
+                { "FileFormat", options.FileFormat },
                 { "Amount", creditDetail.Amount.ToString( "C" ) }
             };
             var depositSlipText = depositSlipTemplate.ResolveMergeFields( mergeFields, null );

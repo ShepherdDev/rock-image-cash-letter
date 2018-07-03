@@ -55,7 +55,10 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
                 };
                 var filename = fileFormat.FileNameTemplate.ResolveMergeFields( mergeFields );
 
-                var stream = component.ExportBatches( fileFormat, batches, out errorMessages );
+                var options = new ExportOptions( fileFormat, batches );
+                options.BusinessDateTime = new DateTime( 2018, 6, 28, 16, 59, 0 );
+                options.ExportDateTime = new DateTime( 2018, 6, 28, 16, 59, 0 );
+                var stream = component.ExportBatches( options, out errorMessages );
 
                 var binaryFileService = new BinaryFileService( rockContext );
                 var binaryFileTypeService = new BinaryFileTypeService( rockContext );
