@@ -150,11 +150,38 @@ namespace com.shepherdchurch.ImageCashLetter
         /// and sent to their financial institution. The returned BinaryFile should not have been
         /// saved to the database yet.
         /// </summary>
-        /// <param name="fileFormat">The <see cref="ImageCashLetterFileFormat" /> that is being used to export this data.</param>
-        /// <param name="batches">The list of batches whose data needs to be exported.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="errorMessages">On return will contain a list of error messages if not empty.</param>
         /// <returns>A <see cref="Stream" /> of data that should be downloaded to the user in a file.</returns>
-        public abstract Stream ExportBatches( ImageCashLetterFileFormat fileFormat, List<FinancialBatch> batches, out List<string> errorMessages );
+        public abstract Stream ExportBatches( ExportOptions options, out List<string> errorMessages );
+
+        #endregion
+
+        #region System Settings
+
+        /// <summary>
+        /// Gets the system setting. This is just a helper method.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
+        protected string GetSystemSetting( string key )
+        {
+            key = "com.shepherdchurch.ImageCashLetter." + key;
+
+            return Rock.Web.SystemSettings.GetValue( key );
+        }
+
+        /// <summary>
+        /// Sets the system setting.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
+        protected void SetSystemSetting( string key, string value )
+        {
+            key = "com.shepherdchurch.ImageCashLetter." + key;
+
+            Rock.Web.SystemSettings.SetValue( key, value );
+        }
 
         #endregion
     }

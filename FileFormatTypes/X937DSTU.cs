@@ -46,13 +46,12 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// and sent to their financial institution. The returned BinaryFile should not have been
         /// saved to the database yet.
         /// </summary>
-        /// <param name="fileFormat">The <see cref="ImageCashLetterFileFormat" /> that is being used to export this data.</param>
-        /// <param name="batches">The list of batches whose data needs to be exported.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="errorMessages">On return will contain a list of error messages if not empty.</param>
         /// <returns>
         /// A <see cref="Stream" /> of data that should be downloaded to the user in a file.
         /// </returns>
-        public override Stream ExportBatches( ImageCashLetterFileFormat fileFormat, List<FinancialBatch> batches, out List<string> errorMessages )
+        public override Stream ExportBatches( ExportOptions options, out List<string> errorMessages )
         {
             var records = new List<X937.Record>();
 
@@ -61,7 +60,10 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             //
             // Get all the transactions that will be exported from these batches.
             //
-            var transactions = batches.SelectMany( b => b.Transactions ).ToList();
+            var transactions = options.Batches.SelectMany( b => b.Transactions )
+                .OrderBy( t => t.ProcessedDateTime )
+                .ThenBy( t => t.Id )
+                .ToList();
 
             //
             // Perform error checking to ensure that all the transactions in these batches
@@ -77,11 +79,11 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             //
             // Generate all the X9.37 records for this set of transactions.
             //
-            records.Add( GetFileHeaderRecord( fileFormat ) );
-            records.Add( GetCashLetterHeaderRecord( fileFormat ) );
-            records.AddRange( GetBundleRecords( fileFormat, transactions ) );
-            records.Add( GetCashLetterControlRecord( fileFormat, records ) );
-            records.Add( GetFileControlRecord( fileFormat, records ) );
+            records.Add( GetFileHeaderRecord( options) );
+            records.Add( GetCashLetterHeaderRecord( options) );
+            records.AddRange( GetBundleRecords( options, transactions ) );
+            records.Add( GetCashLetterControlRecord( options, records ) );
+            records.Add( GetFileControlRecord( options, records ) );
 
             //
             // Encode all the records into a memory stream so that it can be saved to a file
@@ -106,23 +108,23 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets the file header record (type 01).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <returns>A FileHeader record.</returns>
-        protected virtual X937.Records.FileHeader GetFileHeaderRecord( ImageCashLetterFileFormat fileFormat )
+        protected virtual X937.Records.FileHeader GetFileHeaderRecord( ExportOptions options )
         {
-            var destinationRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "RoutingNumber" ) );
-            var originRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "AccountNumber" ) );
+            var destinationRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "RoutingNumber" ) );
+            var originRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "AccountNumber" ) );
 
             var header = new X937.Records.FileHeader
             {
                 StandardLevel = 3,
-                FileTypeIndicator = GetAttributeValue( fileFormat, "TestMode" ).AsBoolean( true ) ? "T" : "P",
+                FileTypeIndicator = GetAttributeValue( options.FileFormat, "TestMode" ).AsBoolean( true ) ? "T" : "P",
                 ImmediateDestinationRoutingNumber = destinationRoutingNumber,
                 ImmediateOriginRoutingNumber = originRoutingNumber,
-                FileCreationDateTime = DateTime.Now,
+                FileCreationDateTime = options.ExportDateTime,
                 ResendIndicator = "N",
-                ImmediateDestinationName = GetAttributeValue( fileFormat, "DestinationName" ),
-                ImmediateOriginName = GetAttributeValue( fileFormat, "OriginName" ),
+                ImmediateDestinationName = GetAttributeValue( options.FileFormat, "DestinationName" ),
+                ImmediateOriginName = GetAttributeValue( options.FileFormat, "OriginName" ),
                 FileIdModifier = "1", // TODO: Need some way to track this and reset each day.
                 CountryCode = "US", /* Should be safe, X9.37 is only used in the US as far as I know. */
                 UserField = string.Empty
@@ -134,10 +136,10 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets the file control record (type 99).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="records">The existing records in the file.</param>
         /// <returns>A FileControl record.</returns>
-        protected virtual X937.Records.FileControl GetFileControlRecord( ImageCashLetterFileFormat fileFormat, List<X937.Record> records )
+        protected virtual X937.Records.FileControl GetFileControlRecord( ExportOptions options, List<X937.Record> records )
         {
             var cashHeaderRecords = records.Where( r => r.RecordType == 10 );
             var detailRecords = records.Where( r => r.RecordType == 25 ).Cast<dynamic>();
@@ -149,8 +151,8 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
                 TotalRecordCount = records.Count + 1, /* Plus one to include self */
                 TotalItemCount = itemRecords.Count(),
                 TotalAmount = detailRecords.Sum( c => ( decimal ) c.ItemAmount ),
-                ImmediateOriginContactName = GetAttributeValue( fileFormat, "ContactName" ),
-                ImmediateOriginContactPhoneNumber = GetAttributeValue( fileFormat, "ContactPhone" )
+                ImmediateOriginContactName = GetAttributeValue( options.FileFormat, "ContactName" ),
+                ImmediateOriginContactPhoneNumber = GetAttributeValue( options.FileFormat, "ContactPhone" )
             };
 
             return control;
@@ -163,21 +165,21 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets the cash letter header record (type 10).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <returns>A CashLetterHeader record.</returns>
-        protected virtual X937.Records.CashLetterHeader GetCashLetterHeaderRecord( ImageCashLetterFileFormat fileFormat )
+        protected virtual X937.Records.CashLetterHeader GetCashLetterHeaderRecord( ExportOptions options )
         {
-            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "RoutingNumber" ) );
-            var contactName = GetAttributeValue( fileFormat, "ContactName" );
-            var contactPhone = GetAttributeValue( fileFormat, "ContactPhone" );
+            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "RoutingNumber" ) );
+            var contactName = GetAttributeValue( options.FileFormat, "ContactName" );
+            var contactPhone = GetAttributeValue( options.FileFormat, "ContactPhone" );
 
             var header = new X937.Records.CashLetterHeader
             {
                 CollectionTypeIndicator = 1,
                 DestinationRoutingNumber = routingNumber,
                 ClientInstitutionRoutingNumber = routingNumber,
-                BusinessDate = DateTime.Now, // TODO: We might need to ask the user this and pass it in.
-                CreationDateTime = DateTime.Now,
+                BusinessDate = options.BusinessDateTime,
+                CreationDateTime = options.ExportDateTime,
                 RecordTypeIndicator = "I",
                 DocumentationTypeIndicator = "G",
                 OriginatorContactName = contactName,
@@ -190,16 +192,16 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets the cash letter control record (type 90).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="records">Existing records in the cash letter.</param>
         /// <returns>A CashLetterControl record.</returns>
-        protected virtual X937.Records.CashLetterControl GetCashLetterControlRecord( ImageCashLetterFileFormat fileFormat, List<X937.Record> records )
+        protected virtual X937.Records.CashLetterControl GetCashLetterControlRecord( ExportOptions options, List<X937.Record> records )
         {
             var bundleHeaderRecords = records.Where( r => r.RecordType == 20 );
             var checkDetailRecords = records.Where( r => r.RecordType == 25 ).Cast<dynamic>();
             var itemRecords = records.Where( r => r.RecordType == 25 || r.RecordType == 61 );
             var imageDetailRecords = records.Where( r => r.RecordType == 52 );
-            var organizationName = Rock.Web.Cache.GlobalAttributesCache.Value( "OrganizationName" );
+            var organizationName = GetAttributeValue( options.FileFormat, "OriginName" );
 
             var control = new X937.Records.CashLetterControl
             {
@@ -220,10 +222,10 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets all the bundle records in required for the transactions specified.
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="transactions">The transactions to be exported.</param>
         /// <returns>A collection of records that identify all the exported transactions.</returns>
-        protected virtual List<X937.Record> GetBundleRecords( ImageCashLetterFileFormat fileFormat, List<FinancialTransaction> transactions )
+        protected virtual List<X937.Record> GetBundleRecords( ExportOptions options, List<FinancialTransaction> transactions )
         {
             var records = new List<X937.Record>();
 
@@ -237,25 +239,25 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
                 //
                 // Add the bundle header for this set of transactions.
                 //
-                bundleRecords.Add( GetBundleHeader( fileFormat, bundleIndex ) );
+                bundleRecords.Add( GetBundleHeader( options, bundleIndex ) );
 
                 //
                 // Allow subclasses to provide credit detail records (type 61) if they want.
                 //
-                bundleRecords.AddRange( GetCreditDetailRecords( fileFormat, bundleIndex, bundleTransactions ) );
+                bundleRecords.AddRange( GetCreditDetailRecords( options, bundleIndex, bundleTransactions ) );
 
                 //
                 // Add records for each transaction in the bundle.
                 //
                 foreach ( var transaction in bundleTransactions )
                 {
-                    bundleRecords.AddRange( GetItemRecords( fileFormat, transaction ) );
+                    bundleRecords.AddRange( GetItemRecords( options, transaction ) );
                 }
 
                 //
                 // Add the bundle control record.
                 //
-                bundleRecords.Add( GetBundleControl( fileFormat, bundleRecords ) );
+                bundleRecords.Add( GetBundleControl( options, bundleRecords ) );
 
                 records.AddRange( bundleRecords );
             }
@@ -266,20 +268,20 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets the bundle header record (type 20).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="bundleIndex">Number of existing bundle records in the cash letter.</param>
         /// <returns>A BundleHeader record.</returns>
-        protected virtual X937.Records.BundleHeader GetBundleHeader( ImageCashLetterFileFormat fileFormat, int bundleIndex )
+        protected virtual X937.Records.BundleHeader GetBundleHeader( ExportOptions options, int bundleIndex )
         {
-            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "RoutingNumber" ) );
+            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "RoutingNumber" ) );
 
             var header = new X937.Records.BundleHeader
             {
                 CollectionTypeIndicator = 1,
                 DestinationRoutingNumber = routingNumber,
                 ClientInstitutionRoutingNumber = routingNumber,
-                BusinessDate = DateTime.Now,
-                CreationDate = DateTime.Now,
+                BusinessDate = options.BusinessDateTime,
+                CreationDate = options.ExportDateTime,
                 ID = string.Empty,
                 SequenceNumber = ( bundleIndex + 1 ).ToString(),
                 CycleNumber = string.Empty,
@@ -292,11 +294,11 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets the credit detail deposit record (type 61).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="bundleIndex">Number of existing bundle records in the cash letter.</param>
         /// <param name="transactions">The transactions associated with this deposit.</param>
         /// <returns>A collection of records.</returns>
-        protected virtual List<X937.Record> GetCreditDetailRecords( ImageCashLetterFileFormat fileFormat, int bundleIndex, List<FinancialTransaction> transactions )
+        protected virtual List<X937.Record> GetCreditDetailRecords( ExportOptions options, int bundleIndex, List<FinancialTransaction> transactions )
         {
             return new List<X937.Record>();
         }
@@ -304,10 +306,10 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets the bundle control record (type 70).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="records">The existing records in the bundle.</param>
         /// <returns>A BundleControl record.</returns>
-        protected virtual X937.Records.BundleControl GetBundleControl( ImageCashLetterFileFormat fileFormat, List<X937.Record> records )
+        protected virtual X937.Records.BundleControl GetBundleControl( ExportOptions options, List<X937.Record> records )
         {
             var itemRecords = records.Where( r => r.RecordType == 25 || r.RecordType == 61 );
             var checkDetailRecords = records.Where( r => r.RecordType == 25 ).Cast<dynamic>();
@@ -331,17 +333,17 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets the records that identify a single check being deposited.
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="transaction">The transaction to be deposited.</param>
         /// <returns>A collection of records.</returns>
-        protected virtual List<X937.Record> GetItemRecords( ImageCashLetterFileFormat fileFormat, FinancialTransaction transaction )
+        protected virtual List<X937.Record> GetItemRecords( ExportOptions options, FinancialTransaction transaction )
         {
             var records = new List<X937.Record>();
 
-            records.AddRange( GetItemDetailRecords( fileFormat, transaction ) );
+            records.AddRange( GetItemDetailRecords( options, transaction ) );
 
-            records.AddRange( GetImageRecords( fileFormat, transaction, transaction.Images.Take( 1 ).First(), true ) );
-            records.AddRange( GetImageRecords( fileFormat, transaction, transaction.Images.Skip( 1 ).Take( 1 ).First(), false ) );
+            records.AddRange( GetImageRecords( options, transaction, transaction.Images.Take( 1 ).First(), true ) );
+            records.AddRange( GetImageRecords( options, transaction, transaction.Images.Skip( 1 ).Take( 1 ).First(), false ) );
 
             return records;
         }
@@ -349,13 +351,13 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets the item detail records (type 25, 26, etc.)
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="transaction">The transaction being deposited.</param>
         /// <returns>A collection of records.</returns>
-        protected virtual List<X937.Record> GetItemDetailRecords( ImageCashLetterFileFormat fileFormat, FinancialTransaction transaction )
+        protected virtual List<X937.Record> GetItemDetailRecords( ExportOptions options, FinancialTransaction transaction )
         {
-            var accountNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "AccountNumber" ) );
-            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "RoutingNumber" ) );
+            var accountNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "AccountNumber" ) );
+            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "RoutingNumber" ) );
 
             //
             // Parse the MICR data from the transaction.
@@ -388,7 +390,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             {
                 RecordNumber = 1,
                 BankOfFirstDepositRoutingNumber = routingNumber,
-                BankOfFirstDepositBusinessDate = DateTime.Now,
+                BankOfFirstDepositBusinessDate = options.BusinessDateTime,
                 TruncationIndicator = "N",
                 BankOfFirstDepositConversionIndicator = "2",
                 BankOfFirstDepositCorrectionIndicator = "0"
@@ -400,15 +402,15 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// <summary>
         /// Gets the image record for a specific transaction image (type 50 and 52).
         /// </summary>
-        /// <param name="fileFormat">The file format that contains the configuration to use.</param>
+        /// <param name="options">Export options to be used by the component.</param>
         /// <param name="transaction">The transaction being deposited.</param>
         /// <param name="image">The check image scanned by the scanning application.</param>
         /// <param name="isFront">if set to <c>true</c> [is front].</param>
         /// <returns>A collection of records.</returns>
-        protected virtual List<X937.Record> GetImageRecords( ImageCashLetterFileFormat fileFormat, FinancialTransaction transaction, FinancialTransactionImage image, bool isFront )
+        protected virtual List<X937.Record> GetImageRecords( ExportOptions options, FinancialTransaction transaction, FinancialTransactionImage image, bool isFront )
         {
-            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "RoutingNumber" ) );
-            var accountNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( fileFormat, "AccountNumber" ) );
+            var routingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "RoutingNumber" ) );
+            var accountNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "AccountNumber" ) );
 
             //
             // Get the Image View Detail record (type 50).
@@ -417,7 +419,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             {
                 ImageIndicator = 1,
                 ImageCreatorRoutingNumber = routingNumber,
-                ImageCreatorDate = image.CreatedDateTime ?? DateTime.Now,
+                ImageCreatorDate = image.CreatedDateTime ?? options.ExportDateTime,
                 ImageViewFormatIndicator = 0,
                 CompressionAlgorithmIdentifier = 0,
                 SideIndicator = isFront ? 0 : 1,
@@ -431,7 +433,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             var data = new X937.Records.ImageViewData
             {
                 InstitutionRoutingNumber = routingNumber,
-                BundleBusinessDate = DateTime.Now,
+                BundleBusinessDate = options.BusinessDateTime,
                 ClientInstitutionItemSequenceNumber = accountNumber,
                 ClippingOrigin = 0,
                 ImageData = ConvertImageToTiffG4( image.BinaryFile.ContentStream ).ReadBytesToEnd()

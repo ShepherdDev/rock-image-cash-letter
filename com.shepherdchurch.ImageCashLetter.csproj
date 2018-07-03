@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ExportOptions.cs" />
     <Compile Include="FileFormatTypeComponent.cs" />
     <Compile Include="FileFormatTypeContainer.cs" />
     <Compile Include="FileFormatTypes\BankOfTheWest.cs" />
