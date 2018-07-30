@@ -247,6 +247,71 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
             return value.FormatAsCurrency();
         }
 
+        /// <summary>
+        /// Validates the selection to ensure that all MICR numbers are valid.
+        /// </summary>
+        protected void ValidateSelection()
+        {
+            var rockContext = new RockContext();
+            var batchIds = hfBatchIds.Value.Split().AsIntegerList();
+
+            //
+            // Check for a bad MICR scan.
+            //
+            var transaction = new FinancialBatchService( rockContext ).Queryable()
+                .Where( b => batchIds.Contains( b.Id ) )
+                .SelectMany( b => b.Transactions )
+                .Where( t => string.IsNullOrEmpty( t.CheckMicrHash ) )
+                .OrderBy( t => t.Id )
+                .FirstOrDefault();
+
+            if ( transaction != null )
+            {
+                hfFixMicrId.Value = transaction.Id.ToString();
+                ltBadMicr.Text = Rock.Security.Encryption.DecryptString( transaction.CheckMicrEncrypted );
+
+                tbRoutingNumber.Text = string.Empty;
+                tbAccountNumber.Text = string.Empty;
+                tbCheckNumber.Text = string.Empty;
+                imgFront.ImageUrl = transaction.Images.First().BinaryFile.Url;
+
+                try
+                {
+                    var micr = new Micr( Rock.Security.Encryption.DecryptString( transaction.CheckMicrEncrypted ) );
+                    tbRoutingNumber.Text = micr.GetRoutingNumber();
+                    tbAccountNumber.Text = micr.GetAccountNumber();
+                    tbCheckNumber.Text = micr.GetCheckNumber();
+                }
+                catch { /* Intentionally left blank */ }
+
+                pnlBatches.Visible = false;
+                pnlFixMicr.Visible = true;
+            }
+            else
+            {
+                ShowOptions();
+            }
+        }
+
+        protected void ShowOptions()
+        {
+            var rockContext = new RockContext();
+            var batchIds = hfBatchIds.Value.Split().AsIntegerList();
+
+            decimal total = new FinancialBatchService( rockContext ).Queryable()
+                .Where( b => batchIds.Contains( b.Id ) )
+                .ToList()
+                .Sum( b => b.Transactions.Sum( t => t.TotalAmount ) );
+
+            lTotalDeposit.Text = total.FormatAsCurrency();
+
+            dpBusinessDate.SelectedDateTime = RockDateTime.Now.SundayDate().AddDays( -7 );
+
+            pnlBatches.Visible = false;
+            pnlFixMicr.Visible = false;
+            pnlOptions.Visible = true;
+        }
+
         #endregion
 
         #region Event Handlers
@@ -342,19 +407,9 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
             {
                 batchIds = GetQuery( rockContext ).Select( b => b.Id ).ToList();
             }
-
-            decimal total = new FinancialBatchService( rockContext ).Queryable()
-                .Where( b => batchIds.Contains( b.Id ) )
-                .ToList()
-                .Sum( b => b.Transactions.Sum( t => t.TotalAmount ) );
-
             hfBatchIds.Value = string.Join( ",", batchIds.Select( i => i.ToString() ) );
-            lTotalDeposit.Text = total.FormatAsCurrency();
 
-            dpBusinessDate.SelectedDateTime = RockDateTime.Now.SundayDate().AddDays( -7 );
-
-            pnlBatches.Visible = false;
-            pnlOptions.Visible = true;
+            ValidateSelection();
         }
 
         /// <summary>
@@ -477,6 +532,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void lbCancel_Click( object sender, EventArgs e )
         {
+            pnlFixMicr.Visible = false;
             pnlOptions.Visible = false;
             pnlBatches.Visible = true;
 
@@ -643,5 +699,24 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
         }
 
         #endregion
+
+        /// <summary>
+        /// Handles the Click event of the lbFixMicr control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void lbFixMicr_Click( object sender, EventArgs e )
+        {
+            var rockContext = new RockContext();
+            var transaction = new FinancialTransactionService( rockContext ).Get( hfFixMicrId.Value.AsInteger() );
+
+            var micrText = string.Format( "d{0}d{1}c{2}", tbRoutingNumber.Text, tbAccountNumber.Text, tbCheckNumber.Text );
+            transaction.CheckMicrEncrypted = Rock.Security.Encryption.EncryptString( micrText );
+            transaction.CheckMicrHash = Rock.Security.Encryption.GetSHA1Hash( micrText );
+
+            rockContext.SaveChanges();
+
+            ValidateSelection();
+        }
     }
 }
