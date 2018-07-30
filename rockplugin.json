@@ -1,0 +1,7 @@
+{
+  "Name": "Image Cash Letter",
+  "Organization": "Shepherd Church",
+  "DLLs": [
+    "X937.dll"
+  ]
+}
