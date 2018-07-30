@@ -251,7 +251,14 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
                 //
                 foreach ( var transaction in bundleTransactions )
                 {
-                    bundleRecords.AddRange( GetItemRecords( options, transaction ) );
+                    try
+                    {
+                        bundleRecords.AddRange( GetItemRecords( options, transaction ) );
+                    }
+                    catch ( Exception ex )
+                    {
+                        throw new Exception( string.Format( "Error processing transaction {0}.", transaction.Id ), ex );
+                    }
                 }
 
                 //
