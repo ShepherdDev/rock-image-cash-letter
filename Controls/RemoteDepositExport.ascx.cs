@@ -549,6 +549,25 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
             NavigateToCurrentPage();
         }
 
+        /// <summary>
+        /// Handles the Click event of the lbFixMicr control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void lbFixMicr_Click( object sender, EventArgs e )
+        {
+            var rockContext = new RockContext();
+            var transaction = new FinancialTransactionService( rockContext ).Get( hfFixMicrId.Value.AsInteger() );
+
+            var micrText = string.Format( "d{0}d{1}c{2}", tbRoutingNumber.Text, tbAccountNumber.Text, tbCheckNumber.Text );
+            transaction.CheckMicrEncrypted = Rock.Security.Encryption.EncryptString( micrText );
+            transaction.CheckMicrHash = Rock.Security.Encryption.GetSHA1Hash( micrText );
+
+            rockContext.SaveChanges();
+
+            ValidateSelection();
+        }
+
         #endregion
 
         #region Support Classes
@@ -699,24 +718,5 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
         }
 
         #endregion
-
-        /// <summary>
-        /// Handles the Click event of the lbFixMicr control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void lbFixMicr_Click( object sender, EventArgs e )
-        {
-            var rockContext = new RockContext();
-            var transaction = new FinancialTransactionService( rockContext ).Get( hfFixMicrId.Value.AsInteger() );
-
-            var micrText = string.Format( "d{0}d{1}c{2}", tbRoutingNumber.Text, tbAccountNumber.Text, tbCheckNumber.Text );
-            transaction.CheckMicrEncrypted = Rock.Security.Encryption.EncryptString( micrText );
-            transaction.CheckMicrHash = Rock.Security.Encryption.GetSHA1Hash( micrText );
-
-            rockContext.SaveChanges();
-
-            ValidateSelection();
-        }
     }
 }
