@@ -68,7 +68,7 @@ namespace com.shepherdchurch.ImageCashLetter
             {
                 _content = string.Empty;
             }
-            else if ( !content.Contains( "d" ) )
+            else if ( !content.Contains( "d" ) || !content.Contains( "c" ) )
             {
                 throw new ArgumentException( "Argument does not contain valid micr data.", "content" );
             }
