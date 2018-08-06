@@ -261,7 +261,8 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
             var transaction = new FinancialBatchService( rockContext ).Queryable()
                 .Where( b => batchIds.Contains( b.Id ) )
                 .SelectMany( b => b.Transactions )
-                .Where( t => string.IsNullOrEmpty( t.CheckMicrHash ) )
+                .ToList()
+                .Where( t => string.IsNullOrEmpty( t.CheckMicrHash ) || !Micr.IsValid( Rock.Security.Encryption.DecryptString( t.CheckMicrEncrypted ) ) )
                 .OrderBy( t => t.Id )
                 .FirstOrDefault();
 

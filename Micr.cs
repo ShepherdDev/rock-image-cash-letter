@@ -98,6 +98,47 @@ namespace com.shepherdchurch.ImageCashLetter
 
         #endregion
 
+        #region Static Methods
+
+        /// <summary>
+        /// Returns true if the MICR content is valid. This is not a perfect check, but
+        /// it should give a strong indication on the MICR string being valid or not.
+        /// </summary>
+        /// <param name="content">The content.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified content is valid; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool IsValid( string content )
+        {
+            if ( content.Contains( "!" ) )
+            {
+                return false;
+            }
+
+            try
+            {
+                var micr = new Micr( content );
+
+                if ( micr.GetRoutingNumber().Length != 9 )
+                {
+                    return false;
+                }
+
+                if ( micr.GetAccountNumber().Length < 6 )
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        #endregion
+
         #region Internal Methods
 
         /// <summary>
