@@ -84,5 +84,15 @@ namespace Tests
             Assert.Equal( string.Empty, micr.GetExternalProcessingCode() );
             Assert.Equal( "706001", micr.GetAuxOnUs() );
         }
+
+        [Fact]
+        public void ValidMicr7()
+        {
+            Micr micr = new Micr( "d382179107d1528 c233445801c                      " );
+
+            Assert.Equal( "382179107", micr.GetRoutingNumber() );
+            Assert.Equal( "233445801", micr.GetAccountNumber() );
+            Assert.Equal( "1528", micr.GetCheckNumber() );
+        }
     }
 }

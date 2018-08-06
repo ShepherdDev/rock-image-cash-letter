@@ -178,7 +178,14 @@ namespace com.shepherdchurch.ImageCashLetter
                     {
                         f = GetCharacterFields( 13, 32 );
 
-                        return f.Substring( 0, f.IndexOf( 'c' ) ).Trim();
+                        if ( f.IndexOf( 'c' ) != f.LastIndexOf( 'c' ) )
+                        {
+                            return f.Substring( f.IndexOf( 'c' ) + 1, f.LastIndexOf( 'c' ) - f.IndexOf( 'c' ) - 1 ).Trim();
+                        }
+                        else
+                        {
+                            return f.Substring( 0, f.IndexOf( 'c' ) ).Trim();
+                        }
                     }
 
                 // AUX OnUs
@@ -198,7 +205,14 @@ namespace com.shepherdchurch.ImageCashLetter
                     {
                         f = GetCharacterFields( 13, 32 );
 
-                        return f.Substring( f.IndexOf( 'c' ) + 1 ).Trim();
+                        if ( f.IndexOf( 'c' ) != f.LastIndexOf( 'c' ) )
+                        {
+                            return f.Substring( 0, f.IndexOf( 'c' ) - 1 ).Trim() + f.Substring( f.LastIndexOf( 'c' ) + 1 ).Trim();
+                        }
+                        else
+                        {
+                            return f.Substring( f.IndexOf( 'c' ) + 1 ).Trim();
+                        }
                     }
 
                 // External Processing code
