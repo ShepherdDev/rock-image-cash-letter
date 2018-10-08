@@ -81,7 +81,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             //
             records.Add( GetFileHeaderRecord( options) );
             records.Add( GetCashLetterHeaderRecord( options) );
-            records.AddRange( GetBundleRecords( options, transactions ) );
+            records.AddRange( GetBundleRecords( options ) );
             records.Add( GetCashLetterControlRecord( options, records ) );
             records.Add( GetFileControlRecord( options, records ) );
 
@@ -218,6 +218,23 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         #endregion
 
         #region Bundle Records
+
+        /// <summary>
+        /// Gets the bundle records for the entire export.
+        /// </summary>
+        /// <param name="options">Export options to be used by the component.</param>
+        /// <returns>A collection of records that identify all the exported batches.</returns>
+        protected virtual List<X937.Record> GetBundleRecords( ExportOptions options )
+        {
+            var records = new List<X937.Record>();
+
+            foreach ( var batch in options.Batches )
+            {
+                records.AddRange( GetBundleRecords( options, batch.Transactions.ToList() ) );
+            }
+
+            return records;
+        }
 
         /// <summary>
         /// Gets all the bundle records in required for the transactions specified.
