@@ -118,9 +118,10 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
             ddlStatus.BindToEnum<BatchStatus>();
             ddlStatus.Items.Insert( 0, Rock.Constants.All.ListItem );
             string statusFilter = gfBatches.GetUserPreference( "Status" );
+            statusFilter = "";
             if ( string.IsNullOrWhiteSpace( statusFilter ) )
             {
-                statusFilter = BatchStatus.Closed.ConvertToInt().ToString();
+                statusFilter = "All";
             }
             ddlStatus.SetValue( statusFilter );
 
@@ -360,6 +361,12 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
                 try
                 {
                     stream = component.ExportBatches( options, out errorMessages );
+
+                    if ( errorMessages.Any() )
+                    {
+                        nbWarningMessage.Text = string.Join( "<br>", errorMessages );
+                        return;
+                    }
                 }
                 catch ( Exception ex )
                 {
