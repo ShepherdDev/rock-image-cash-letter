@@ -97,7 +97,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
 
                 gBatches.SetLinqDataSource( financialBatchQry );
                 gBatches.ObjectList = ( ( List<FinancialBatch> ) gBatches.DataSource ).ToDictionary( k => k.Id.ToString(), v => v as object );
-                gBatches.EntityTypeId = EntityTypeCache.Read<FinancialBatch>().Id;
+                gBatches.EntityTypeId = EntityTypeCache.Get<FinancialBatch>().Id;
 
                 gBatches.DataBind();
             }
@@ -180,7 +180,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
             }
 
             // filter by campus
-            var campus = CampusCache.Read( gfBatches.GetUserPreference( "Campus" ).AsInteger() );
+            var campus = CampusCache.Get( gfBatches.GetUserPreference( "Campus" ).AsInteger() );
             if ( campus != null )
             {
                 qry = qry.Where( b => b.CampusId == campus.Id );
@@ -470,7 +470,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
 
                 case "Campus":
                     {
-                        var campus = CampusCache.Read( e.Value.AsInteger() );
+                        var campus = CampusCache.Get( e.Value.AsInteger() );
                         e.Value = campus != null ? campus.Name : string.Empty;
                         break;
                     }
