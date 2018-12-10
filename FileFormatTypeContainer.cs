@@ -62,7 +62,7 @@ namespace com.shepherdchurch.ImageCashLetter
 
         public void UpdateAttributes()
         {
-            var entityType = EntityTypeCache.Read<Model.ImageCashLetterFileFormat>( false );
+            var entityType = EntityTypeCache.Get<Model.ImageCashLetterFileFormat>( false );
             if ( entityType != null )
             {
                 foreach ( var component in this.Components )

@@ -77,7 +77,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
                 .ThenBy( f => f.Id )
                 .ToList();
 
-            gFileFormat.EntityTypeId = EntityTypeCache.Read<ImageCashLetterFileFormat>().Id;
+            gFileFormat.EntityTypeId = EntityTypeCache.Get<ImageCashLetterFileFormat>().Id;
             gFileFormat.DataSource = types;
             gFileFormat.DataBind();
         }
