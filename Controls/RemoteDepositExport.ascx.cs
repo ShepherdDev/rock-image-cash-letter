@@ -254,7 +254,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
         protected void ValidateSelection()
         {
             var rockContext = new RockContext();
-            var batchIds = hfBatchIds.Value.Split().AsIntegerList();
+            var batchIds = hfBatchIds.Value.Split( ',' ).AsIntegerList();
 
             //
             // Check for a bad MICR scan.
