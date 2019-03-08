@@ -171,64 +171,71 @@ namespace com.shepherdchurch.ImageCashLetter
         {
             var f = string.Empty;
 
-            switch ( FieldType )
+            try
             {
-                // Account number
-                case FIELD.ACCOUNT_NUMBER:
-                    {
-                        f = GetCharacterFields( 13, 32 );
-
-                        if ( f.IndexOf( 'c' ) != f.LastIndexOf( 'c' ) )
+                switch ( FieldType )
+                {
+                    // Account number
+                    case FIELD.ACCOUNT_NUMBER:
                         {
-                            return f.Substring( f.IndexOf( 'c' ) + 1, f.LastIndexOf( 'c' ) - f.IndexOf( 'c' ) - 1 ).Trim();
+                            f = GetCharacterFields( 13, 32 );
+
+                            if ( f.IndexOf( 'c' ) != f.LastIndexOf( 'c' ) )
+                            {
+                                return f.Substring( f.IndexOf( 'c' ) + 1, f.LastIndexOf( 'c' ) - f.IndexOf( 'c' ) - 1 ).Trim();
+                            }
+                            else
+                            {
+                                return f.Substring( 0, f.IndexOf( 'c' ) ).Trim();
+                            }
                         }
-                        else
+
+                    // AUX OnUs
+                    case FIELD.AUX_ON_US:
                         {
-                            return f.Substring( 0, f.IndexOf( 'c' ) ).Trim();
+                            return GetCharacterFields( 45, _content.Length ).Replace( "c", "" ).Trim();
                         }
-                    }
 
-                // AUX OnUs
-                case FIELD.AUX_ON_US:
-                    {
-                        return GetCharacterFields( 45, _content.Length ).Replace( "c", "" ).Trim();
-                    }
-
-                // Check Amount
-                case FIELD.CHECK_AMOUNT:
-                    {
-                        return GetCharacterFields( 2, 11 ).Trim();
-                    }
-
-                // Check Number
-                case FIELD.CHECK_NUMBER:
-                    {
-                        f = GetCharacterFields( 13, 32 );
-
-                        if ( f.IndexOf( 'c' ) != f.LastIndexOf( 'c' ) )
+                    // Check Amount
+                    case FIELD.CHECK_AMOUNT:
                         {
-                            return f.Substring( 0, f.IndexOf( 'c' ) - 1 ).Trim() + f.Substring( f.LastIndexOf( 'c' ) + 1 ).Trim();
+                            return GetCharacterFields( 2, 11 ).Trim();
                         }
-                        else
+
+                    // Check Number
+                    case FIELD.CHECK_NUMBER:
                         {
-                            return f.Substring( f.IndexOf( 'c' ) + 1 ).Trim();
+                            f = GetCharacterFields( 13, 32 );
+
+                            if ( f.IndexOf( 'c' ) != f.LastIndexOf( 'c' ) )
+                            {
+                                return f.Substring( 0, f.IndexOf( 'c' ) - 1 ).Trim() + f.Substring( f.LastIndexOf( 'c' ) + 1 ).Trim();
+                            }
+                            else
+                            {
+                                return f.Substring( f.IndexOf( 'c' ) + 1 ).Trim();
+                            }
                         }
-                    }
 
-                // External Processing code
-                case FIELD.EXTERNAL_PROCESSING_CODE:
-                    {
-                        return GetCharacterFields( 44, 44 ).Trim();
-                    }
+                    // External Processing code
+                    case FIELD.EXTERNAL_PROCESSING_CODE:
+                        {
+                            return GetCharacterFields( 44, 44 ).Trim();
+                        }
 
-                // Routing Number
-                case FIELD.ROUTING_NUMBER:
-                    {
-                        return GetCharacterFields( 34, 42 ).Trim();
-                    }
+                    // Routing Number
+                    case FIELD.ROUTING_NUMBER:
+                        {
+                            return GetCharacterFields( 34, 42 ).Trim();
+                        }
+                }
+
+                return string.Empty;
             }
-
-            return string.Empty;
+            catch
+            {
+                return string.Empty;
+            }
         }
 
         #endregion
