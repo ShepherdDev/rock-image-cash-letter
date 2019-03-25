@@ -90,17 +90,39 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             // by the caller.
             //
             var stream = new MemoryStream();
+
+            WritePreContent( options, stream );
+
             using ( var writer = new BinaryWriter( stream, System.Text.Encoding.UTF8, true ) )
             {
                 foreach ( var record in records )
                 {
-                    record.Encode( writer );
+                    WriteRecord( record, writer );
                 }
             }
 
             stream.Position = 0;
 
             return stream;
+        }
+
+        /// <summary>
+        /// Gets pre text records.
+        /// </summary>
+        /// <param name="options">Export options to be used by the component.</param>
+        /// <param name="stream">A Memory Stream.</param>
+        protected virtual void WritePreContent( ExportOptions options, MemoryStream stream )
+        {
+        }
+
+        /// <summary>
+        /// Gets pre text records.
+        /// </summary>
+        /// <param name="options">Export options to be used by the component.</param>
+        /// <param name="stream">A Memory Stream.</param>
+        protected virtual void WriteRecord( X937.Record record, BinaryWriter writer )
+        {
+            record.Encode( writer, true );
         }
 
         #region File Records
@@ -475,7 +497,7 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
         /// </summary>
         /// <param name="imageStream">The image stream.</param>
         /// <returns></returns>
-        protected Stream ConvertImageToTiffG4( Stream imageStream )
+        protected virtual Stream ConvertImageToTiffG4( Stream imageStream )
         {
             var bitmap = new Bitmap( imageStream );
 
