@@ -1,5 +1,6 @@
 ﻿using System;
 
+
 namespace com.shepherdchurch.ImageCashLetter
 {
     /// <summary>
@@ -28,19 +29,24 @@ namespace com.shepherdchurch.ImageCashLetter
             ACCOUNT_NUMBER,
 
             /// <summary>
-            /// Field 5
+            /// Field 4
             /// </summary>
             ROUTING_NUMBER,
 
             /// <summary>
-            /// Field 6
+            /// Field 5
             /// </summary>
             EXTERNAL_PROCESSING_CODE,
 
             /// <summary>
+            /// Field 6
+            /// </summary>
+            AUX_ON_US,
+
+            /// <summary>
             /// Field 7
             /// </summary>
-            AUX_ON_US
+            ON_US
         }
 
         #region Fields
@@ -124,7 +130,7 @@ namespace com.shepherdchurch.ImageCashLetter
                     return false;
                 }
 
-                if ( micr.GetAccountNumber().Length < 6 )
+                if ( string.IsNullOrWhiteSpace( micr.GetOnUs() ) )
                 {
                     return false;
                 }
@@ -223,6 +229,12 @@ namespace com.shepherdchurch.ImageCashLetter
                             return GetCharacterFields( 44, 44 ).Trim();
                         }
 
+                    // OnUs
+                    case FIELD.ON_US:
+                        {
+                            return GetCharacterFields( 13, 31 ).Trim();
+                        }
+
                     // Routing Number
                     case FIELD.ROUTING_NUMBER:
                         {
@@ -294,6 +306,15 @@ namespace com.shepherdchurch.ImageCashLetter
         public string GetAuxOnUs()
         {
             return GetField( FIELD.AUX_ON_US );
+        }
+
+        /// <summary>
+        /// GetOnUs
+        /// </summary>
+        /// <returns>string</returns>
+        public string GetOnUs()
+        {
+            return GetField( FIELD.ON_US );
         }
 
         #endregion
