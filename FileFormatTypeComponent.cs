@@ -164,7 +164,7 @@ namespace com.shepherdchurch.ImageCashLetter
         /// </summary>
         /// <param name="key">The key.</param>
         /// <returns></returns>
-        protected string GetSystemSetting( string key )
+        protected virtual string GetSystemSetting( string key )
         {
             key = "com.shepherdchurch.ImageCashLetter." + key;
 
@@ -176,7 +176,7 @@ namespace com.shepherdchurch.ImageCashLetter
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="value">The value.</param>
-        protected void SetSystemSetting( string key, string value )
+        protected virtual void SetSystemSetting( string key, string value )
         {
             key = "com.shepherdchurch.ImageCashLetter." + key;
 

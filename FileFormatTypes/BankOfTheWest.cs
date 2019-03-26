@@ -28,6 +28,18 @@ Account: {{ FileFormat | Attribute:'AccountNumber' }}
 Amount: {{ Amount }}", order: 20 )]
     public class BankOfTheWest : X937DSTU
     {
+        #region Unit Test Properties
+
+        /// <summary>
+        /// Gets or sets the enabled lava commands, this allows override of the default.
+        /// </summary>
+        /// <value>
+        /// The enabled lava commands.
+        /// </value>
+        public string EnabledLavaCommands { get; set; }
+
+        #endregion
+
         #region System Setting Keys
 
         /// <summary>
@@ -247,7 +259,7 @@ Amount: {{ Amount }}", order: 20 )]
                 { "FileFormat", options.FileFormat },
                 { "Amount", creditDetail.Amount.ToString( "C" ) }
             };
-            var depositSlipText = depositSlipTemplate.ResolveMergeFields( mergeFields, null );
+            var depositSlipText = depositSlipTemplate.ResolveMergeFields( mergeFields, null, EnabledLavaCommands );
 
             //
             // Ensure we are opague with white.

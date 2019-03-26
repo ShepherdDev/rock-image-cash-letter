@@ -69,8 +69,8 @@ namespace com.shepherdchurch.ImageCashLetter.FileFormatTypes
             // Perform error checking to ensure that all the transactions in these batches
             // are of the proper currency type.
             //
-            int currencyTypeCheckId = Rock.Web.Cache.DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ).Id;
-            if ( transactions.Any( t => t.FinancialPaymentDetail.CurrencyTypeValueId != currencyTypeCheckId ) )
+            var currencyTypeCheckGuid = Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid();
+            if ( transactions.Any( t => t.FinancialPaymentDetail.CurrencyTypeValue.Guid != currencyTypeCheckGuid ) )
             {
                 errorMessages.Add( "One or more transactions is not of type 'Check'." );
                 return null;
