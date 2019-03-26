@@ -39,8 +39,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Rock">
+      <HintPath>..\..\RockWeb\Bin\Rock.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="xunit.abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
       <HintPath>..\..\packages\xunit.abstractions.2.0.1\lib\net35\xunit.abstractions.dll</HintPath>
     </Reference>
@@ -57,14 +61,21 @@
   <ItemGroup>
     <Compile Include="MicrTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="BankOfTheWestTest.cs" />
+    <Compile Include="TestTools.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\X937\X937.csproj">
+      <Project>{a05041e6-9b19-4e8f-9d78-4393203bee79}</Project>
+      <Name>X937</Name>
+    </ProjectReference>
     <ProjectReference Include="..\com.shepherdchurch.ImageCashLetter.csproj">
       <Project>{36a68a49-a91d-4ae3-840d-072eed2dd58a}</Project>
       <Name>com.shepherdchurch.ImageCashLetter</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

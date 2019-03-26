@@ -1,9 +1,6 @@
-﻿using System;
+﻿using Xunit;
 
-using com.shepherdchurch.ImageCashLetter;
-using Xunit;
-
-namespace Tests
+namespace com.shepherdchurch.ImageCashLetter.Tests
 {
     public class MicrTest
     {
@@ -93,6 +90,17 @@ namespace Tests
             Assert.Equal( "382179107", micr.GetRoutingNumber() );
             Assert.Equal( "233445801", micr.GetAccountNumber() );
             Assert.Equal( "1528", micr.GetCheckNumber() );
+        }
+
+        [Fact]
+        public void ValidMicr8()
+        {
+            // This came from a Wells Fargo test check that they say is valid.
+            var micr = new Micr( "c2336c d092901104d               c12c                   " );
+
+            Assert.Equal( "092901104", micr.GetRoutingNumber() );
+            Assert.Equal( "12", micr.GetAccountNumber() );
+            Assert.Equal( "2336", micr.GetAuxOnUs() );
         }
     }
 }
