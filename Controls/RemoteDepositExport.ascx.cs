@@ -263,7 +263,15 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
                 .Where( b => batchIds.Contains( b.Id ) )
                 .SelectMany( b => b.Transactions )
                 .ToList()
-                .Where( t => string.IsNullOrEmpty( t.CheckMicrHash ) || !Micr.IsValid( Rock.Security.Encryption.DecryptString( t.CheckMicrEncrypted ) ) )
+                .Select( t => new
+                {
+                    t.Id,
+                    t.Images,
+                    t.CheckMicrEncrypted,
+                    t.CheckMicrHash,
+                    DecryptedMicr = string.IsNullOrWhiteSpace( t.CheckMicrHash ) ? null : Rock.Security.Encryption.DecryptString( t.CheckMicrEncrypted )
+                } )
+                .Where( t => t.DecryptedMicr == null || !Micr.IsValid( t.DecryptedMicr ) ) 
                 .OrderBy( t => t.Id )
                 .FirstOrDefault();
 
@@ -275,7 +283,15 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
                 tbRoutingNumber.Text = string.Empty;
                 tbAccountNumber.Text = string.Empty;
                 tbCheckNumber.Text = string.Empty;
-                imgFront.ImageUrl = transaction.Images.First().BinaryFile.Url;
+                if ( transaction.Images.Any() )
+                {
+                    imgFront.ImageUrl = transaction.Images.First().BinaryFile.Url;
+                    imgFront.Visible = true;
+                }
+                else
+                {
+                    imgFront.Visible = false;
+                }
 
                 try
                 {
@@ -371,7 +387,7 @@ namespace RockWeb.Plugins.com_shepherdchurch.ImageCashLetter
                 catch ( Exception ex )
                 {
                     ExceptionLogService.LogException( ex );
-                    nbWarningMessage.Text = ex.Message;
+                    nbWarningMessage.Text = ex.Messages().AsDelimited( "; " );
                     return;
                 }
 
