@@ -229,7 +229,7 @@ namespace com.shepherdchurch.ImageCashLetter
                             return GetCharacterFields( 44, 44 ).Trim();
                         }
 
-                    // OnUs
+                    // The full raw ON_US field (that typically contains the account number and check number)
                     case FIELD.ON_US:
                         {
                             return GetCharacterFields( 13, 31 ).Trim();
@@ -309,7 +309,7 @@ namespace com.shepherdchurch.ImageCashLetter
         }
 
         /// <summary>
-        /// GetOnUs
+        /// Gets the full raw ON_US field (that typically contains the account and check number)
         /// </summary>
         /// <returns>string</returns>
         public string GetOnUs()
