@@ -66,6 +66,7 @@
     <Compile Include="ExportOptions.cs" />
     <Compile Include="FileFormatTypeComponent.cs" />
     <Compile Include="FileFormatTypeContainer.cs" />
+    <Compile Include="FileFormatTypes\BMO.cs" />
     <Compile Include="FileFormatTypes\WellsFargo.cs" />
     <Compile Include="FileFormatTypes\BankOfTheWest.cs" />
     <Compile Include="FileFormatTypes\X937DSTU.cs" />
