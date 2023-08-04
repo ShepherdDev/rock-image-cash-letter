@@ -14,6 +14,8 @@ using X937.Records;
 using X937;
 using System.Text;
 using Rock.Security;
+using com.shepherdchurch.ImageCashLetter;
+using com.shepherdchurch.ImageCashLetter.FileFormatTypes;
 
 namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
 {
