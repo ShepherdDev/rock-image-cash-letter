@@ -4,6 +4,7 @@ using System.Data.Entity.ModelConfiguration;
 using System.Runtime.Serialization;
 
 using Rock.Data;
+using Rock.Lava;
 using Rock.Model;
 
 namespace com.shepherdchurch.ImageCashLetter.Model
@@ -53,7 +54,7 @@ namespace com.shepherdchurch.ImageCashLetter.Model
         /// <summary>
         /// Gets or sets the component entity type of this file format.
         /// </summary>
-        [LavaInclude]
+        [LavaVisible]
         public virtual EntityType EntityType { get; set; }
 
         #endregion
